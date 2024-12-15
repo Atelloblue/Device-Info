@@ -1,23 +1,18 @@
-// Function to display device memory
+// Function to display device memory (in GB)
 function displayMemory() {
-    if (navigator.deviceMemory) {
+    // Check if the device supports the `navigator.deviceMemory` API
+    if (navigator.deviceMemory !== undefined) {
         const memory = navigator.deviceMemory; // in GB
-        document.getElementById('memory').innerText = `Device Memory: ${memory} GB`;
-    } else {
-        document.getElementById('memory').innerText = "Device Memory: Not supported";
-    }
-}
 
-// Function to display battery status
-function displayBattery() {
-    if (navigator.getBattery) {
-        navigator.getBattery().then(function(battery) {
-            const level = (battery.level * 100) + '%';
-            const charging = battery.charging ? 'Charging' : 'Not Charging';
-            document.getElementById('battery').innerText = `Battery Level: ${level}, Status: ${charging}`;
-        });
+        // Ensure that the memory is a valid positive number
+        if (typeof memory === 'number' && memory > 0) {
+            document.getElementById('memory').innerText = `Device Memory: ${memory} GB`;
+        } else {
+            document.getElementById('memory').innerText = "Device Memory: Invalid data";
+        }
     } else {
-        document.getElementById('battery').innerText = "Battery Status: Not supported";
+        // If the `navigator.deviceMemory` API is not supported, display a fallback message
+        document.getElementById('memory').innerText = "Device Memory: Not Supported";
     }
 }
 
@@ -34,24 +29,100 @@ function displayCores() {
     document.getElementById('cores').innerText = `Number of CPU Cores: ${cores}`;
 }
 
-// Function to display CPU architecture
+// Detect architecture and device type from userAgent
 function displayArchitecture() {
-    const userAgent = navigator.userAgent;
-    let architecture = "Not supported";
+    const userAgent = navigator.userAgent.toLowerCase();
+    let architecture = "Unknown";
 
-    // Detect architecture from userAgent
-    if (userAgent.includes("x86_64") || userAgent.includes("amd64")) {
-        architecture = "64-bit (x86_64)";
-    } else if (userAgent.includes("i686") || userAgent.includes("x86")) {
-        architecture = "32-bit (x86)";
-    } else if (userAgent.includes("arm64") || userAgent.includes("aarch64")) {
+    // Check for iOS devices (iPad, iPhone, iPod)
+    if (userAgent.includes("ipad")) {
+        if (userAgent.includes("arm64")) {
+            if (userAgent.includes("m2")) {
+                architecture = "64-bit (Apple Silicon M2, iPad)";
+            } else if (userAgent.includes("m1")) {
+                architecture = "64-bit (Apple Silicon M1, iPad)";
+            } else {
+                architecture = "64-bit (ARM, iPad)";
+            }
+        } else {
+            architecture = "32-bit (ARM, iPad)";
+        }
+    } 
+    else if (userAgent.includes("iphone") || userAgent.includes("ipod")) {
+        if (userAgent.includes("arm64")) {
+            architecture = "64-bit (ARM, Apple iOS)";
+        } else {
+            architecture = "32-bit (ARM, Apple iOS)";
+        }
+    }
+    // Check for macOS devices (MacBook, Mac, iMac, Mac Mini, etc.)
+    else if (userAgent.includes("macintosh")) {
+        if (userAgent.includes("arm64")) {
+            if (userAgent.includes("m1")) {
+                architecture = "64-bit (Apple Silicon M1)";
+            } else if (userAgent.includes("m2")) {
+                architecture = "64-bit (Apple Silicon M2)";
+            } else {
+                architecture = "64-bit (Apple Silicon)";
+            }
+        } else if (userAgent.includes("intel")) {
+            architecture = "64-bit (Intel x86)";
+        }
+    }
+    // Check for Intel processors
+    else if (userAgent.includes("intel")) {
+        if (userAgent.includes("x86_64") || userAgent.includes("amd64")) {
+            architecture = "64-bit (Intel x86)";
+        } else if (userAgent.includes("i3")) {
+            architecture = "64-bit (Intel i3)";
+        } else if (userAgent.includes("i5")) {
+            architecture = "64-bit (Intel i5)";
+        } else if (userAgent.includes("i7")) {
+            architecture = "64-bit (Intel i7)";
+        } else if (userAgent.includes("i9")) {
+            architecture = "64-bit (Intel i9)";
+        } else if (userAgent.includes("pentium")) {
+            architecture = "32-bit (Intel Pentium)";
+        } else if (userAgent.includes("atom")) {
+            architecture = "32-bit (Intel Atom)";
+        } else {
+            architecture = "32-bit (Intel CPU)";
+        }
+    }
+    // Check for AMD processors
+    else if (userAgent.includes("amd")) {
+        if (userAgent.includes("ryzen")) {
+            architecture = "64-bit (AMD Ryzen)";
+        } else if (userAgent.includes("athlon")) {
+            architecture = "32-bit (AMD Athlon)";
+        } else if (userAgent.includes("x86_64") || userAgent.includes("amd64")) {
+            architecture = "64-bit (AMD x86)";
+        } else if (userAgent.includes("fx")) {
+            architecture = "64-bit (AMD FX)";
+        } else if (userAgent.includes("opteron")) {
+            architecture = "64-bit (AMD Opteron)";
+        } else {
+            architecture = "32-bit (AMD CPU)";
+        }
+    }
+    // Check for other ARM-based architectures
+    else if (userAgent.includes("arm64") || userAgent.includes("aarch64")) {
         architecture = "64-bit (ARM)";
     } else if (userAgent.includes("arm")) {
         architecture = "32-bit (ARM)";
     }
+    // Check for other architecture types
+    else if (userAgent.includes("powerpc")) {
+        architecture = "64-bit (PowerPC)";
+    } else if (userAgent.includes("sparc")) {
+        architecture = "64-bit (SPARC)";
+    }
 
-    document.getElementById('architecture').innerText = `CPU Architecture: ${architecture}`;
+    return architecture;
 }
+
+// Usage example
+document.getElementById('architecture').innerText = `Architecture: ${displayArchitecture()}`;
 
 // Function to display the operating system
 function displayOS() {
@@ -176,7 +247,6 @@ function displayLocation() {
         document.getElementById('location').innerText = "Location: Not supported";
     }
 }
-
 // Function to display device orientation
 function displayDeviceOrientation() {
     if (window.DeviceOrientationEvent) {
@@ -191,15 +261,31 @@ function displayDeviceOrientation() {
     }
 }
 
-// Function to display user agent string
-function displayUserAgent() {
-    const userAgent = navigator.userAgent || "Not supported";
-    document.getElementById('user-agent').innerText = `User Agent: ${userAgent}`;
-}
-
-// Function to display graphics card information (not supported in most browsers)
+// Function to display graphics card information (limited support)
 function displayGraphicsCard() {
-    document.getElementById('graphics').innerText = "Graphics Card: Not supported";
+    let graphicsInfo = "Graphics Card: Not supported";
+
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+        if (gl) {
+            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            if (debugInfo) {
+                const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                graphicsInfo = `Graphics Card: ${vendor} ${renderer}`;
+            } else {
+                graphicsInfo = "Graphics Card: WebGL supported, but specific info not available";
+            }
+        } else {
+            graphicsInfo = "Graphics Card: WebGL not supported";
+        }
+    } catch (e) {
+        graphicsInfo = "Graphics Card: Not supported (error accessing WebGL)";
+    }
+
+    document.getElementById('graphics').innerText = graphicsInfo;
 }
 
 // Function to display device type
@@ -212,31 +298,65 @@ function displayDeviceType() {
 
 // Function to display timezone
 function displayTimezone() {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Not supported";
-        document.getElementById('timezone').innerText = `Timezone: ${timezone}`;
-    }
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Not supported";
+    document.getElementById('timezone').innerText = `Timezone: ${timezone}`;
+}
 
-    // Function to initialize all displays
-    function initializeDeviceInfo() {
-        displayMemory();
-        displayBattery();
-        displayScreenResolution();
-        displayCores();
-        displayArchitecture();
-        displayOS();
-        displayBrowser();
-        displayLanguage();
-        displayViewport();
-        displayConnection();
-        displayOnlineStatus();
-        displayTime();
-        displayLocation();
-        displayDeviceOrientation();
-        displayUserAgent();
-        displayGraphicsCard();
-        displayDeviceType();
-        displayTimezone();
-    }
+let lastTime = 0;
+let fps = 0;
+let frameCount = 0;
 
-    // Call the initialization function when the document is loaded
-    document.addEventListener("DOMContentLoaded", initializeDeviceInfo);
+// Function to display battery information
+function displayBatteryInfo() {
+    if ('getBattery' in navigator) {
+        navigator.getBattery().then((battery) => {
+            function updateBatteryInfo() {
+                const level = (battery.level * 100).toFixed(0) + "%";
+                const charging = battery.charging ? "Yes" : "No";
+                const chargingTime = battery.chargingTime === Infinity ? "Not charging" : battery.chargingTime + " seconds";
+                const dischargingTime = battery.dischargingTime === Infinity ? "N/A" : battery.dischargingTime + " seconds";
+
+                document.getElementById('battery-info').innerText = 
+                    `Battery Level: ${level}\nCharging: ${charging}\nCharging Time: ${chargingTime}\nDischarging Time: ${dischargingTime}`;
+            }
+
+            // Initial update
+            updateBatteryInfo();
+
+            // Update info when battery status changes
+            battery.addEventListener('levelchange', updateBatteryInfo);
+            battery.addEventListener('chargingchange', updateBatteryInfo);
+            battery.addEventListener('chargingtimechange', updateBatteryInfo);
+            battery.addEventListener('dischargingtimechange', updateBatteryInfo);
+        });
+    } else {
+        document.getElementById('battery-info').innerText = "Battery Level: Not supported";
+    }
+}
+
+// Function to initialize all displays
+function initializeDeviceInfo() {
+    displayMemory();
+    displayScreenResolution();
+    displayCores();
+    displayArchitecture();
+    displayOS();
+    displayBrowser();
+    displayLanguage();
+    displayViewport();
+    displayConnection();
+    displayOnlineStatus();
+    displayTime();
+    displayLocation();
+    displayDeviceOrientation();
+    displayGraphicsCard();
+    displayDeviceType();
+    displayTimezone();
+    displayBatteryInfo();
+}
+
+// Update device information every few milliseconds
+setInterval(initializeDeviceInfo, 100);
+
+// Call the function once initially to populate data immediately
+initializeDeviceInfo();
